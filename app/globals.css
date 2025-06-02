@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 84 92% 64%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 84 92% 64%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 84 92% 64%;
+    --radius: 0.5rem;
+
+    /* Sidebar variables - now white */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 84 92% 64%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 84 92% 64%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 84 92% 64%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 84 92% 64%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 84 92% 64%;
+
+    /* Sidebar variables - keep white in dark mode too */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 84 92% 64%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 84 92% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .stat-card {
+    @apply relative overflow-hidden rounded-lg border bg-yellow-50 p-4 shadow-sm;
+  }
+
+  .stat-card-icon {
+    @apply absolute right-4 top-4 text-primary;
+  }
+
+  .stat-card-value {
+    @apply mt-2 text-3xl font-bold;
+  }
+
+  .stat-card-label {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+
+  .stat-card-meta {
+    @apply mt-1 flex items-center text-xs text-muted-foreground;
+  }
+
+  .dashboard-card {
+    @apply rounded-lg border bg-card shadow-sm;
+  }
+
+  .dashboard-card-header {
+    @apply flex flex-row items-center justify-between space-y-0 p-4 pb-2;
+  }
+
+  .dashboard-card-title {
+    @apply text-base font-semibold;
+  }
+
+  .dashboard-card-content {
+    @apply p-4 pt-0;
+  }
+
+  .data-table {
+    @apply w-full overflow-auto;
+  }
+
+  .data-table-header {
+    @apply bg-muted/50;
+  }
+
+  .data-table-row {
+    @apply hover:bg-muted/50 transition-colors duration-150;
+  }
+
+  .data-table-cell {
+    @apply p-3 align-middle [&:has([role=checkbox])]:pr-0;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+  .sidebar-item-active {
+    @apply bg-primary text-sidebar-primary-foreground hover:bg-primary hover:text-sidebar-primary-foreground;
+  }
+
+  .tab-button {
+    @apply rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted;
+  }
+
+  .tab-button-active {
+    @apply bg-background text-foreground shadow-sm;
+  }
+}

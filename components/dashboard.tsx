@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
+  TrendingUp,
+  TrendingDown,
   Calendar,
   CheckCircle,
   Clock,
@@ -15,6 +15,12 @@ import {
   MapPin,
   Users,
   Bell,
+  Activity,
+  Shield,
+  Search,
+  Filter,
+  MoreVertical,
+  RefreshCw
 } from "lucide-react"
 import { ReportTable } from "@/components/report-table"
 import { OfficerMap } from "@/components/officer-map"
@@ -33,6 +39,7 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -91,8 +98,8 @@ export default function Dashboard() {
         timestamp: data.timestamp,
       })
       toast({
-        title: "Incident Update",
-        description: `New ${data.incidentType} incident at ${data.location} (Priority: ${data.priority})`,
+        title: "New Incident Alert",
+        description: `${data.incidentType} reported at ${data.location}`,
         variant: data.priority === 'critical' ? "destructive" : "default",
       })
     }
@@ -109,260 +116,348 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (incidentDialog) {
-      const timeout = setTimeout(() => setIncidentDialog(null), 5000)
+      const timeout = setTimeout(() => setIncidentDialog(null), 8000)
       return () => clearTimeout(timeout)
     }
   }, [incidentDialog])
 
+  const getStatTrend = (value: number, isPositive: boolean = true) => {
+    return isPositive ? 
+      <TrendingUp className="w-4 h-4 text-green-600" /> : 
+      <TrendingDown className="w-4 h-4 text-red-500" />
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'bg-red-500 text-white'
+      case 'high': return 'bg-orange-500 text-white'
+      case 'medium': return 'bg-yellow-500 text-black'
+      default: return 'bg-blue-500 text-white'
+    }
+  }
+
   return (
     <>
+      {/* Incident Alert Dialog */}
       <Dialog open={!!incidentDialog} onOpenChange={open => !open && setIncidentDialog(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg font-bold text-red-600">New Incident Alert</DialogTitle>
-            <DialogDescription className="flex flex-col items-center gap-3 mt-2">
-              {incidentDialog && (
-                <>
-                  {incidentDialog.evidenceUrl && (
-                    <a href={incidentDialog.evidenceUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
-                      <img
-                        src={incidentDialog.evidenceUrl}
-                        alt="Incident Evidence"
-                        className="mx-auto mb-2 max-h-56 rounded-lg border shadow object-contain bg-muted w-full"
-                      />
-                    </a>
-                  )}
-                  <div className="w-full text-center">
-                    <div className="mt-1 text-base font-semibold">Type: <span className="capitalize">{incidentDialog.incidentType}</span></div>
-                    <div className="mt-1 text-base">Location: <span className="font-medium">{incidentDialog.location}</span></div>
-                    <div className="mt-1 text-base">Priority: <span className={incidentDialog.priority === 'critical' ? 'text-red-600 font-bold' : 'text-yellow-600 font-bold'}>{incidentDialog.priority}</span></div>
-                    {incidentDialog.timestamp && (
-                      <div className="mt-1 text-base">Time: <span className="font-mono">{new Date(incidentDialog.timestamp).toLocaleString()}</span></div>
-                    )}
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Emergency Alert
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-4 pt-2">
+                {incidentDialog?.evidenceUrl && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img
+                      src={incidentDialog.evidenceUrl}
+                      alt="Incident Evidence"
+                      className="w-full h-40 object-cover"
+                    />
                   </div>
-                </>
-              )}
+                )}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Type:</span>
+                    <span className="capitalize">{incidentDialog?.incidentType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Location:</span>
+                    <span>{incidentDialog?.location}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Priority:</span>
+                    <Badge className={`${getPriorityColor(incidentDialog?.priority || '')} capitalize`}>
+                      {incidentDialog?.priority}
+                    </Badge>
+                  </div>
+                  {incidentDialog?.timestamp && (
+                    <div className="flex justify-between">
+                      <span className="font-medium">Time:</span>
+                      <span className="text-sm">
+                        {new Date(incidentDialog.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </DialogDescription>
           </DialogHeader>
-          <DialogClose asChild>
-            <Button variant="outline" className="w-full mt-4">Close</Button>
-          </DialogClose>
+          <div className="flex gap-2 pt-4">
+            <Button className="flex-1" variant="outline" onClick={() => setIncidentDialog(null)}>
+              Dismiss
+            </Button>
+            <Button className="flex-1">
+              Assign Officer
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
-      <div className="p-6 bg-muted/40">
-        {/* Main content */}
-        <main className="flex-1 p-6">
-          {/* Stats cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="stat-card">
-              <div className="stat-card-icon">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div className="stat-card-label">New Reports</div>
-              <div className="stat-card-value">
-                {isLoading ? "..." : stats?.total_report || 0}
-              </div>
-              <div className="stat-card-meta">
-                <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
-                <span>Total reports</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-icon">
-                <Users className="h-5 w-5" />
-              </div>
-              <div className="stat-card-label">Active Officers</div>
-              <div className="stat-card-value">
-                {isLoading ? "..." : stats?.active_police || 0}
-              </div>
-              <div className="stat-card-meta">
-                <span>Currently on field duty</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-icon">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <div className="stat-card-label">Resolved Cases</div>
-              <div className="stat-card-value">
-                {isLoading ? "..." : stats?.resolve_Case || 0}
-              </div>
-              <div className="stat-card-meta">
-                <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
-                <span>Total resolved cases</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-icon">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div className="stat-card-label">Response Time</div>
-              <div className="stat-card-value">
-                {isLoading ? "..." : `${stats?.response_time || 0} min`}
-              </div>
-              <div className="stat-card-meta">
-                <ArrowDown className="mr-1 h-3 w-3 text-green-500" />
-                <span>Average response time</span>
-              </div>
-            </div>
+      
+      <div className="min-h-screen bg-gray-50">
+     
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">New Reports</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {isLoading ? "..." : stats?.total_report || 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Total reports today</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                </div>
+                <div className="flex items-center mt-2">
+                  {getStatTrend(12)}
+                  <span className="text-sm text-green-600 ml-1">12% from yesterday</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Officers</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {isLoading ? "..." : stats?.active_police || 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Currently on duty</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+                <div className="flex items-center mt-2">
+                  <Activity className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-gray-600 ml-1">All operational</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Resolved Cases</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {isLoading ? "..." : stats?.resolve_Case || 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">This month</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <div className="flex items-center mt-2">
+                  {getStatTrend(8)}
+                  <span className="text-sm text-green-600 ml-1">8% increase</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Response Time</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {isLoading ? "..." : `${stats?.response_time || 0}m`}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Average response</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-orange-600" />
+                  </div>
+                </div>
+                <div className="flex items-center mt-2">
+                  <TrendingDown className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-600 ml-1">2min faster</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Tabs */}
-          <div className="mt-6 flex space-x-1 rounded-full bg-muted p-1">
+          {/* Navigation Tabs */}
+          <div className="bg-white rounded-lg border border-gray-200 p-1 mb-8 inline-flex">
             <button
-              className={`tab-button ${activeTab === "overview" ? "tab-button-active" : ""} px-6 py-2 rounded-full font-semibold transition-colors`}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "overview" 
+                  ? "bg-blue-600 text-white shadow-sm" 
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
               onClick={() => setActiveTab("overview")}
             >
               Overview
             </button>
             <button
-              className={`tab-button ${activeTab === "reports" ? "tab-button-active" : ""}`}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "reports" 
+                  ? "bg-blue-600 text-white shadow-sm" 
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
               onClick={() => setActiveTab("reports")}
             >
               Crime Reports
             </button>
             <button
-              className={`tab-button ${activeTab === "officers" ? "tab-button-active" : ""}`}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "officers" 
+                  ? "bg-blue-600 text-white shadow-sm" 
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
               onClick={() => setActiveTab("officers")}
             >
-              Officer Assignment
+              Officers
             </button>
-          
           </div>
 
-          {/* Tab content */}
-          <div className="mt-6">
-            {activeTab === "overview" && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Card className="dashboard-card col-span-1 lg:col-span-2 shadow-md">
-                  <CardHeader className="dashboard-card-header px-6 py-4">
-                    <div>
-                      <CardTitle>Current Incident Map</CardTitle>
-                      <CardDescription>Crime locations and active officers</CardDescription>
-                    </div>
-                    <Badge variant="outline" className="bg-primary/10 text-primary">
-                      Live
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <OfficerMap />
-                  </CardContent>
-                </Card>
-                <Card className="dashboard-card shadow-md">
-                  <CardHeader className="dashboard-card-header px-6 py-4">
-                    <div>
-                      <CardTitle>Recent Alerts</CardTitle>
-                      <CardDescription>Important warnings and notifications</CardDescription>
-                    </div>
-                    <Badge variant="outline" className="bg-primary/10 text-primary">
-                      4 New
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="dashboard-card-content px-6 pb-6">
-                    <RecentAlerts />
-                  </CardContent>
-                </Card>
-                <Card className="dashboard-card">
-                  <CardHeader className="dashboard-card-header">
-                    <div>
-                      <CardTitle>Case Status</CardTitle>
-                      <CardDescription>Distribution of case handling status</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="dashboard-card-content">
-                    <CaseStatusChart />
-                  </CardContent>
-                </Card>
-                <Card className="dashboard-card col-span-1 lg:col-span-2 shadow-md">
-                  <CardHeader className="dashboard-card-header px-6 py-4">
-                    <div>
-                      <CardTitle>Latest Reports</CardTitle>
-                      <CardDescription>Recently submitted crime reports</CardDescription>
-                    </div>
-                    <Button variant="outline" size="sm" className="rounded-full">
-                      <FileText className="mr-2 h-4 w-4" />
-                      View All
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="dashboard-card-content">
-                    <ReportTable limit={5} />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {activeTab === "reports" && (
-              <Card className="dashboard-card shadow-md">
-                <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
+          {/* Tab Content */}
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Map Section */}
+              <Card className="lg:col-span-2 border-gray-200 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle>Crime Report Management</CardTitle>
-                    <CardDescription>Manage all incoming crime reports</CardDescription>
+                    <CardTitle className="text-lg font-semibold">Live Incident Map</CardTitle>
+                    <CardDescription>Real-time crime locations and officer positions</CardDescription>
                   </div>
-                 
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    Live
+                  </Badge>
                 </CardHeader>
-                <CardContent>
-                  <ReportTable />
+                <CardContent className="p-0">
+                  <OfficerMap />
                 </CardContent>
               </Card>
-            )}
 
-            {activeTab === "officers" && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Card className="dashboard-card col-span-1 lg:col-span-2 shadow-md">
-                  <CardHeader className="dashboard-card-header px-6 py-4">
-                    <div>
-                      <CardTitle>Officer Assignment Map</CardTitle>
-                      <CardDescription>Location and status of field officers</CardDescription>
+              {/* Recent Alerts */}
+              <Card className="border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Recent Alerts</CardTitle>
+                  <CardDescription>Latest incident notifications</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentAlerts />
+                </CardContent>
+              </Card>
+
+              {/* Case Status Chart */}
+              <Card className="border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Case Status</CardTitle>
+                  <CardDescription>Current case distribution</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CaseStatusChart />
+                </CardContent>
+              </Card>
+
+              {/* Latest Reports */}
+              <Card className="lg:col-span-2 border-gray-200 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Latest Reports</CardTitle>
+                    <CardDescription>Recently submitted crime reports</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <ReportTable limit={5} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "reports" && (
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold">Crime Report Management</CardTitle>
+                  <CardDescription>Monitor and manage all crime reports</CardDescription>
+                </div>
+                
+              </CardHeader>
+              <CardContent>
+                <ReportTable />
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "officers" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Officer Map */}
+              <Card className="lg:col-span-2 border-gray-200 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Officer Deployment</CardTitle>
+                    <CardDescription>Current officer locations and assignments</CardDescription>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    Tracking
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <OfficerMap showControls={true} />
+                </CardContent>
+              </Card>
+
+              {/* Available Officers */}
+              <Card className="border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Available Officers</CardTitle>
+                  <CardDescription>Officers ready for assignment</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingOfficers ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-gray-500">Loading officers...</div>
                     </div>
-                    <Badge variant="outline" className="bg-primary/10 text-primary">
-                      Live
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <OfficerMap showControls={true} />
-                  </CardContent>
-                </Card>
-                <Card className="dashboard-card shadow-md">
-                  <CardHeader className="dashboard-card-header px-6 py-4">
-                    <div>
-                      <CardTitle>Available Officers</CardTitle>
-                      <CardDescription>Officers ready for assignment</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="dashboard-card-content px-6 pb-6">
-                    {isLoadingOfficers ? (
-                      <div className="text-center text-muted-foreground">Loading officers...</div>
-                    ) : (
-                      <div className="space-y-4">
-                        {availableOfficers.map((officer) => (
-                          <div key={officer.id} className="flex items-center gap-4 rounded-xl border p-4 bg-white shadow-sm hover:bg-muted/60 transition-all min-w-0">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Officer" />
-                              <AvatarFallback>{officer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-base font-semibold truncate">{officer.name}</p>
-                              <p className="text-xs text-muted-foreground break-all">{officer.phone}</p>
-                            </div>
-                            <div className="flex flex-col items-end gap-2 min-w-[90px]">
-                              <Badge variant="outline" className="px-2 py-0.5 w-fit text-xs font-medium">
-                                {officer.status}
-                              </Badge>
-                              <Button size="sm" variant="outline" className="rounded-full w-fit hover:bg-primary/10 transition-colors">
-                                Assign
-                              </Button>
-                            </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {availableOfficers.map((officer) => (
+                        <div key={officer.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage alt="Officer" />
+                            <AvatarFallback className="bg-blue-100 text-blue-700 text-sm font-medium">
+                              {officer.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{officer.name}</p>
+                            <p className="text-xs text-gray-600">{officer.phone}</p>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-          </div>
-        </main>
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant="outline" 
+                              className={officer.status === 'available' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}
+                            >
+                              {officer.status}
+                            </Badge>
+                            <Button size="sm" variant="outline">
+                              Assign
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

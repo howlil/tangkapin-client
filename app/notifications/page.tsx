@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { formatDistanceToNow } from "date-fns"
 import { id } from "date-fns/locale"
 import { Bell, MapPin, Clock } from "lucide-react"
+import { differenceInHours } from "date-fns"
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -58,44 +59,47 @@ export default function NotificationsPage() {
       </div>
 
       <div className="space-y-4">
-        {notifications.map((notification) => (
-          <Card key={notification.id} className={`${notification.status === 'unread' ? 'border-primary/50 bg-primary/5' : ''}`}>
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{notification.title}</CardTitle>
-                  <CardDescription className="mt-1">{notification.message}</CardDescription>
+        {notifications.map((notification) => {
+          const isNew = notification.status === 'unread' && differenceInHours(new Date(), new Date(notification.created_at)) < 1
+          return (
+            <Card key={notification.id} className={`${notification.status === 'unread' ? 'border-primary/50 bg-primary/5' : ''}`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{notification.title}</CardTitle>
+                    <CardDescription className="mt-1">{notification.message}</CardDescription>
+                  </div>
+                  {isNew && (
+                    <Badge variant="default" className="ml-2">
+                      New
+                    </Badge>
+                  )}
                 </div>
-                {notification.status === 'unread' && (
-                  <Badge variant="default" className="ml-2">
-                    New
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{notification.location}</span>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{notification.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {formatDistanceToNow(new Date(notification.created_at), {
+                        addSuffix: true,
+                        locale: id,
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Bell className="h-4 w-4" />
+                    <span className="capitalize">{notification.type}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {formatDistanceToNow(new Date(notification.created_at), {
-                      addSuffix: true,
-                      locale: id,
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Bell className="h-4 w-4" />
-                  <span className="capitalize">{notification.type}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

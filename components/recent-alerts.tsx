@@ -76,17 +76,12 @@ export function RecentAlerts() {
               <p className="text-xs text-muted-foreground truncate">{alert.location} ({alert.location_code})</p>
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{alert.time_ago}</span>
-                <Button variant="ghost" size="sm" className="h-7 text-xs hover:bg-primary/10 transition-colors">
-                  Details
-                </Button>
               </div>
             </div>
           </div>
         </Card>
       ))}
-      <Button variant="outline" className="w-full rounded-full text-xs">
-        View All Notifications
-      </Button>
+ 
     </div>
   )
 }
